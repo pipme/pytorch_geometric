@@ -1,12 +1,12 @@
 from __future__ import division
 
 import torch
+import torch.nn.functional as F
 from torch_scatter import scatter_add
-from torch_geometric.utils import one_hot
 
 
 def accuracy(pred, target):
-    r"""Computes the accuracy of correct predictions.
+    r"""Computes the accuracy of predictions.
 
     Args:
         pred (Tensor): The predictions.
@@ -86,8 +86,8 @@ def false_negative(pred, target, num_classes):
 
 
 def precision(pred, target, num_classes):
-    r"""Computes the precision:
-    :math:`\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}`.
+    r"""Computes the precision
+    :math:`\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}` of predictions.
 
     Args:
         pred (Tensor): The predictions.
@@ -106,8 +106,8 @@ def precision(pred, target, num_classes):
 
 
 def recall(pred, target, num_classes):
-    r"""Computes the recall:
-    :math:`\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}`.
+    r"""Computes the recall
+    :math:`\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}` of predictions.
 
     Args:
         pred (Tensor): The predictions.
@@ -126,9 +126,9 @@ def recall(pred, target, num_classes):
 
 
 def f1_score(pred, target, num_classes):
-    r"""Computes the :math:`F_1` score:
+    r"""Computes the :math:`F_1` score
     :math:`2 \cdot \frac{\mathrm{precision} \cdot \mathrm{recall}}
-    {\mathrm{precision}+\mathrm{recall}}`.
+    {\mathrm{precision}+\mathrm{recall}}` of predictions.
 
     Args:
         pred (Tensor): The predictions.
@@ -146,8 +146,32 @@ def f1_score(pred, target, num_classes):
     return score
 
 
+def intersection_and_union(pred, target, num_classes, batch=None):
+    r"""Computes intersection and union of predictions.
+
+    Args:
+        pred (LongTensor): The predictions.
+        target (LongTensor): The targets.
+        num_classes (int): The number of classes.
+        batch (LongTensor): The assignment vector which maps each pred-target
+            pair to an example.
+
+    :rtype: (:class:`LongTensor`, :class:`LongTensor`)
+    """
+    pred, target = F.one_hot(pred, num_classes), F.one_hot(target, num_classes)
+
+    if batch is None:
+        i = (pred & target).sum(dim=0)
+        u = (pred | target).sum(dim=0)
+    else:
+        i = scatter_add(pred & target, batch, dim=0)
+        u = scatter_add(pred | target, batch, dim=0)
+
+    return i, u
+
+
 def mean_iou(pred, target, num_classes, batch=None):
-    r"""Computes the mean Intersection over Union score.
+    r"""Computes the mean intersection over union score of predictions.
 
     Args:
         pred (LongTensor): The predictions.
@@ -158,17 +182,8 @@ def mean_iou(pred, target, num_classes, batch=None):
 
     :rtype: :class:`Tensor`
     """
-    pred = one_hot(pred, num_classes, dtype=torch.long)
-    target = one_hot(target, num_classes, dtype=torch.long)
-
-    if batch is not None:
-        i = scatter_add(pred & target, batch, dim=0).to(torch.float)
-        u = scatter_add(pred | target, batch, dim=0).to(torch.float)
-    else:
-        i = (pred & target).sum(dim=0).to(torch.float)
-        u = (pred | target).sum(dim=0).to(torch.float)
-
-    iou = i / u
+    i, u = intersection_and_union(pred, target, num_classes, batch)
+    iou = i.to(torch.float) / u.to(torch.float)
     iou[torch.isnan(iou)] = 1
     iou = iou.mean(dim=-1)
     return iou

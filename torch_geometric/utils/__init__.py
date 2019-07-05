@@ -17,9 +17,9 @@ from .convert import to_scipy_sparse_matrix, from_scipy_sparse_matrix
 from .convert import to_networkx, from_networkx
 from .random import (erdos_renyi_graph, stochastic_blockmodel_graph,
                      barabasi_albert_graph)
-from .one_hot import one_hot
 from .metric import (accuracy, true_positive, true_negative, false_positive,
-                     false_negative, precision, recall, f1_score, mean_iou)
+                     false_negative, precision, recall, f1_score,
+                     intersection_and_union, mean_iou)
 
 __all__ = [
     'degree',
@@ -47,7 +47,6 @@ __all__ = [
     'erdos_renyi_graph',
     'stochastic_blockmodel_graph',
     'barabasi_albert_graph',
-    'one_hot',
     'accuracy',
     'true_positive',
     'true_negative',
@@ -56,5 +55,6 @@ __all__ = [
     'precision',
     'recall',
     'f1_score',
+    'intersection_and_union',
     'mean_iou',
 ]

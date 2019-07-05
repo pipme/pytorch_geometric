@@ -1,10 +1,11 @@
 import torch
 import scipy.sparse
-import networkx
+import networkx as nx
 from torch_sparse import coalesce
 from torch_geometric.data import Data
 from torch_geometric.utils import to_scipy_sparse_matrix, to_networkx
 from torch_geometric.utils import from_scipy_sparse_matrix, from_networkx
+from torch_geometric.utils import subgraph
 
 
 def test_to_scipy_sparse_matrix():
@@ -47,7 +48,7 @@ def test_to_networkx():
     assert G.nodes[1]['x'] == [3, 4]
     assert G.nodes[0]['pos'] == [0, 0]
     assert G.nodes[1]['pos'] == [1, 1]
-    assert networkx.to_numpy_matrix(G).tolist() == [[3, 1], [2, 0]]
+    assert nx.to_numpy_matrix(G).tolist() == [[3, 1], [2, 0]]
 
 
 def test_from_networkx():
@@ -65,3 +66,25 @@ def test_from_networkx():
     edge_index, edge_attr = coalesce(data.edge_index, data.edge_attr, 2, 2)
     assert edge_index.tolist() == [[0, 0, 1], [0, 1, 0]]
     assert edge_attr.tolist() == [3, 1, 2]
+
+
+def test_subgraph_convert():
+    G = nx.complete_graph(5)
+
+    edge_index = from_networkx(G).edge_index
+    sub_edge_index_1, _ = subgraph([0, 1, 3, 4], edge_index)
+
+    sub_edge_index_2 = from_networkx(G.subgraph([0, 1, 3, 4])).edge_index
+
+    assert sub_edge_index_1.tolist() == sub_edge_index_2.tolist()
+
+
+def test_vice_versa_convert():
+    G = nx.complete_graph(5)
+    assert G.is_directed() is False
+    data = from_networkx(G)
+    assert data.is_directed() is False
+    G = to_networkx(data)
+    assert G.is_directed() is True
+    G = nx.to_undirected(G)
+    assert G.is_directed() is False

@@ -26,7 +26,7 @@ class MessagePassing(torch.nn.Module):
     function, *e.g.*, sum, mean or max, and :math:`\gamma_{\mathbf{\Theta}}`
     and :math:`\phi_{\mathbf{\Theta}}` denote differentiable functions such as
     MLPs.
-    See `here <https://rusty1s.github.io/pytorch_geometric/build/html/notes/
+    See `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/
     create_gnn.html>`__ for the accompanying tutorial.
 
     Args:
@@ -93,13 +93,16 @@ class MessagePassing(torch.nn.Module):
                                 raise ValueError(__size_error_msg__)
                         tmp = tmp[idx]
 
-                    if size[idx] is None:
-                        size[idx] = tmp.size(0)
-                    if size[idx] != tmp.size(0):
-                        raise ValueError(__size_error_msg__)
+                    if tmp is None:
+                        message_args.append(tmp)
+                    else:
+                        if size[idx] is None:
+                            size[idx] = tmp.size(0)
+                        if size[idx] != tmp.size(0):
+                            raise ValueError(__size_error_msg__)
 
-                    tmp = torch.index_select(tmp, 0, edge_index[idx])
-                    message_args.append(tmp)
+                        tmp = torch.index_select(tmp, 0, edge_index[idx])
+                        message_args.append(tmp)
             else:
                 message_args.append(kwargs.get(arg, None))
 

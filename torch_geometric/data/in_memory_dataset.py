@@ -7,7 +7,7 @@ from torch_geometric.data import Dataset
 class InMemoryDataset(Dataset):
     r"""Dataset base class for creating graph datasets which fit completely
     into memory.
-    See `here <https://rusty1s.github.io/pytorch_geometric/build/html/notes/
+    See `here <https://pytorch-geometric.readthedocs.io/en/latest/notes/
     create_dataset.html#creating-in-memory-datasets>`__ for the accompanying
     tutorial.
 
@@ -47,10 +47,7 @@ class InMemoryDataset(Dataset):
         r"""Processes the dataset to the :obj:`self.processed_dir` folder."""
         raise NotImplementedError
 
-    def __init__(self,
-                 root,
-                 transform=None,
-                 pre_transform=None,
+    def __init__(self, root, transform=None, pre_transform=None,
                  pre_filter=None):
         super(InMemoryDataset, self).__init__(root, transform, pre_transform,
                                               pre_filter)
@@ -136,7 +133,7 @@ class InMemoryDataset(Dataset):
             elif isinstance(item[key], int) or isinstance(item[key], float):
                 s = slices[key][-1] + 1
             else:
-                raise ValueError('Unsupported attribute type.')
+                raise ValueError('Unsupported attribute type')
             slices[key].append(s)
 
         if hasattr(data_list[0], '__num_nodes__'):

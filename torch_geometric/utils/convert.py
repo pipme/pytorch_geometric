@@ -31,7 +31,7 @@ def to_scipy_sparse_matrix(edge_index, edge_attr=None, num_nodes=None):
 
 
 def from_scipy_sparse_matrix(A):
-    r""""Converts a scipy sparse matrix to edge indices and edge attributes.
+    r"""Converts a scipy sparse matrix to edge indices and edge attributes.
 
     Args:
         A (scipy.sparse): A sparse matrix.
@@ -45,7 +45,8 @@ def from_scipy_sparse_matrix(A):
 
 
 def to_networkx(data, node_attrs=None, edge_attrs=None):
-    r"""Converts a data object graph to a networkx graph.
+    r"""Converts a :class:`torch_geometric.data.Data` instance to a
+    :obj:`networkx.DiGraph`.
 
     Args:
         data (torch_geometric.data.Data): The data object.
@@ -73,12 +74,14 @@ def to_networkx(data, node_attrs=None, edge_attrs=None):
 
 
 def from_networkx(G):
-    r""""Converts a networkx graph to a data object graph.
+    r"""Converts a :obj:`networkx.Graph` or :obj:`networkx.DiGraph` to a
+    :class:`torch_geometric.data.Data` instance.
 
     Args:
-        G (networkx.Graph): A networkx graph.
+        G (networkx.Graph or networkx.DiGraph): A networkx graph.
     """
 
+    G = G.to_directed() if not nx.is_directed(G) else G
     edge_index = torch.tensor(list(G.edges)).t().contiguous()
 
     keys = []

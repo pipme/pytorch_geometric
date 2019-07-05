@@ -1,5 +1,5 @@
 import torch
-from torch_geometric.nn import GraphConv, GATConv, SAGEConv
+from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GraphConv
 from torch_geometric.nn.pool.topk_pool import topk, filter_adj
 
 
@@ -9,9 +9,12 @@ class SAGPooling(torch.nn.Module):
 
     .. math::
         \mathbf{y} &= \textrm{GNN}(\mathbf{X}, \mathbf{A})
+
         \mathbf{i} &= \mathrm{top}_k(\mathbf{y})
+
         \mathbf{X}^{\prime} &= (\mathbf{X} \odot
         \mathrm{tanh}(\mathbf{y}))_{\mathbf{i}}
+
         \mathbf{A}^{\prime} &= \mathbf{A}_{\mathbf{i},\mathbf{i}},
 
     where nodes are dropped based on a learnable projection score
@@ -25,25 +28,28 @@ class SAGPooling(torch.nn.Module):
             (default: :obj:`0.5`)
         gnn (string, optional): Specifies which graph neural network layer to
             use for calculating projection scores (one of
-            :obj:`"GCN"`, :obj:`"GAT"` or :obj:`"SAGE"`). (default: :obj:`GCN`)
+            :obj:`"GraphConv", `:obj:`"GCN"`, :obj:`"GAT"` or :obj:`"SAGE"`).
+            (default: :obj:`GraphConv`)
         **kwargs (optional): Additional parameters for initializing the graph
             neural network layer.
     """
 
-    def __init__(self, in_channels, ratio=0.5, gnn='GCN', **kwargs):
+    def __init__(self, in_channels, ratio=0.5, gnn='GraphConv', **kwargs):
         super(SAGPooling, self).__init__()
 
         self.in_channels = in_channels
         self.ratio = ratio
         self.gnn_name = gnn
 
-        assert gnn in ['GCN', 'GAT', 'SAGE']
+        assert gnn in ['GraphConv', 'GCN', 'GAT', 'SAGE']
         if gnn == 'GCN':
-            self.gnn = GraphConv(self.in_channels, 1, **kwargs)
+            self.gnn = GCNConv(self.in_channels, 1, **kwargs)
         elif gnn == 'GAT':
             self.gnn = GATConv(self.in_channels, 1, **kwargs)
-        else:
+        elif gnn == 'SAGE':
             self.gnn = SAGEConv(self.in_channels, 1, **kwargs)
+        else:
+            self.gnn = GraphConv(self.in_channels, 1, **kwargs)
 
         self.reset_parameters()
 
@@ -61,8 +67,8 @@ class SAGPooling(torch.nn.Module):
         perm = topk(score, self.ratio, batch)
         x = x[perm] * score[perm].view(-1, 1)
         batch = batch[perm]
-        edge_index, edge_attr = filter_adj(
-            edge_index, edge_attr, perm, num_nodes=score.size(0))
+        edge_index, edge_attr = filter_adj(edge_index, edge_attr, perm,
+                                           num_nodes=score.size(0))
 
         return x, edge_index, edge_attr, batch, perm
 
